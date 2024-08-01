@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit  as st
 from langchain.agents import AgentType
-from langchain.experimental.agents import create_pandas_dataframe_agent
+from langchain_experimental.agents import create_pandas_dataframe_agent
 from langchain_ollama import ChatOllama
 
 # streamlit web app configuration
@@ -55,3 +55,26 @@ if user_prompt:
     
     # loading the LLM
     llm = ChatOllama(model = "gemma:2b", temperature=0 )
+
+    pandas_df_agent = create_pandas_dataframe_agent(
+        llm,
+        st.session_state.df,
+        verbose = True,
+        agent_type = AgentType.OPENAI_FUNCTIONS,
+        allow_dangerous_code = True
+    )
+
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant"},
+        *st.session_state.chat_history
+    ]
+
+    response = pandas_df_agent.invoke(user_prompt)
+
+    assistant_response = response["output"]
+
+    st.session_state.chat_history.append({"role": "assistant", "content": assistant_response})
+
+    # display LLM response
+    with st.chat_message("assistant"):
+        st.markdown(assistant_response)
